@@ -1,0 +1,23 @@
+[project]
+name = "edgar-10k-pipeline"
+version = "0.1.0"
+description = "EDGAR 10-K Pipeline"
+readme = "README.md"
+requires-python = "==3.14.6"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.16.10",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM"]
+
+[tool.ruff.format]
+quote-style = "double"
