@@ -24,3 +24,7 @@ htmlcov/
 .DS_Store
 .vscode/
 .idea/
+
+# HTTP cache
+.cache/http/*
+!.cache/http/.gitkeep

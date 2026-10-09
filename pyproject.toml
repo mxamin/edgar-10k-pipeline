@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "EDGAR 10-K Pipeline"
 readme = "README.md"
 requires-python = "==3.14.6"
-dependencies = []
+dependencies = [
+    "requests>=2.34.2",
+]
 
 [dependency-groups]
 dev = [
