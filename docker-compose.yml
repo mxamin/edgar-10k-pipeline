@@ -1,0 +1,12 @@
+services:
+  pipeline:
+    build: .
+    restart: unless-stopped
+    environment:
+      COMPANIES: ${COMPANIES:-}
+      INTERVAL_SECONDS: ${INTERVAL_SECONDS:-3600}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - ./.cache:/app/.cache
+      - ./pdfs:/app/pdfs
+    stop_grace_period: 10s

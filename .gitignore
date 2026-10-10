@@ -25,6 +25,6 @@ htmlcov/
 .vscode/
 .idea/
 
-# HTTP cache
-.cache/http/*
-!.cache/http/.gitkeep
+# Cache and generated PDFs
+.cache/
+pdfs/
