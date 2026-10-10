@@ -1,30 +1,33 @@
 # EDGAR 10-K Pipeline
 
-## Installation
+## Implementation Notes
 
-### Prerequisites
+### 1. Rate limiter
 
-- [uv](https://docs.astral.sh/uv/getting-started/installation/) (manages Python, the virtual environment and dependencies)
+The project started with a rate limiter for HTTP calls to the SEC servers, which allow at most 10 requests per second.
 
-### Setup
+### 2. SEC client
 
-1. Install Python 3.14.6 with uv:
+Next came `SecClient` (`libs/sec_client.py`), an HTTP client that uses the rate limiter to stay within the SEC limits. The goal was to minimize HTTP traffic:
 
-   ```bash
-   uv python install 3.14.6
-   ```
+- **Conditional requests** — the documents we fetch rarely change, so the client sends the `ETag` / `Last-Modified` values back (`If-None-Match` / `If-Modified-Since`) instead of re-downloading unchanged content.
+- **Local cache** — responses are stored locally, so subsequent calls to the same URL are served from the cache when available instead of hitting the SEC servers.
 
-2. From the project root, create the virtual environment and install dependencies:
+### 3. CIK extraction and 10-K download
 
-   ```bash
-   uv sync
-   ```
+The next step was calling the SEC endpoints and processing the JSON responses to locate the 10-K HTML document. This is handled by `CIKExtractor` (`libs/cik_extractor.py`) and `Form10KDownloader` (`libs/form_10k_downloader.py`). Both go through `SecClient`, so the same rate limiting and caching apply.
 
-3. Run the application:
+### 4. HTML to PDF
 
-   ```bash
-   uv run main.py
-   ```
+`Html2PdfConverter` (`libs/html2pdf_converter.py`) converts the HTML to PDF using [WeasyPrint](https://weasyprint.org/), chosen because it is easy to call from Python. In production I would likely move this into a separate service and use a more capable, browser-based renderer such as Puppeteer (headless Chromium).
+
+### 5. Entry point
+
+`main.py` is a simple script that reads its input from environment variables, cycles through the companies and generates the PDFs. It handles the shutdown signal, so stopping the Docker container interrupts the cycle immediately and closes the app.
+
+### Possible improvements
+
+- **Async I/O** — all HTTP calls are currently synchronous. For production I would switch to async calls so multiple requests can be processed in parallel (still within the rate limit).
 
 ## Running with Docker
 
@@ -96,6 +99,32 @@ The container mounts two directories from the project root:
 - `.cache/` — HTTP responses and rendered PDFs, reused across restarts
 - `pdfs/` — generated 10-K PDFs, named `{title}_{ticker}_{cik}.pdf`
 
+## Installation
+
+### Prerequisites
+
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) (manages Python, the virtual environment and dependencies)
+
+### Setup
+
+1. Install Python 3.14.6 with uv:
+
+   ```bash
+   uv python install 3.14.6
+   ```
+
+2. From the project root, create the virtual environment and install dependencies:
+
+   ```bash
+   uv sync
+   ```
+
+3. Run the application:
+
+   ```bash
+   uv run main.py
+   ```
+
 ## Development
 
 ### Linting and formatting
@@ -128,3 +157,13 @@ Run the test suite with [pytest](https://docs.pytest.org/):
 ```bash
 uv run pytest
 ```
+
+## Commit History and AI Prompts
+
+The project was built in small, self-contained commits, one per implementation phase. To follow the implementation phase by phase, walk through the commits from oldest to newest:
+
+```bash
+git log --reverse
+```
+
+The AI prompts I used while implementing this project are also recorded there: each commit message has a `Prompts:` section summarizing the prompts behind that change.
